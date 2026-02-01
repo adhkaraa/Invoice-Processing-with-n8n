@@ -1,0 +1,574 @@
+{
+  "name": "Invoice Data Processing with n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1JJ91llBf16ASrvjUlsRtx8yry3Thfq4p",
+          "mode": "list",
+          "cachedResultName": "Unprocessed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1JJ91llBf16ASrvjUlsRtx8yry3Thfq4p"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        -64
+      ],
+      "id": "751bf296-956a-4b40-b43f-817dec2a1edb",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ftlTi2BLCBhL9EgH",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "invoices"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -128,
+        -64
+      ],
+      "id": "4389ffc6-ab66-4a5b-9199-0b37a8cb374d",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ftlTi2BLCBhL9EgH",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "da3f7fac-6a7b-4703-bd43-4d946a35d1c9",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        -64
+      ],
+      "id": "1bf1c281-9895-4d48-946d-2fdb92959c91",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.extractedText }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Invoice Category",
+              "description": "Select from predefined options (Office Supplies, Bills, Rent). Do not create new categories.",
+              "required": true
+            },
+            {
+              "name": "Invoice Number",
+              "description": "The unique identifier assigned to the invoice, usually a sequence of numbers of letters.",
+              "required": true
+            },
+            {
+              "name": "Invoice Biller",
+              "description": "The name of the company or individual issuing the ",
+              "required": true
+            },
+            {
+              "name": "Invoice Total",
+              "type": "number",
+              "description": "The total payable amount including tax.",
+              "required": true
+            },
+            {
+              "name": "Invoice Sub Total",
+              "type": "number",
+              "description": "The subtotal before tax.",
+              "required": true
+            },
+            {
+              "name": "Tax ammount",
+              "type": "number",
+              "description": "The value of tax applied to the invoice, shown separately from the totals.",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -80
+      ],
+      "id": "7de7a65c-6099-455c-83e3-37da649a9e87",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        96
+      ],
+      "id": "3ff9224b-b955-4123-b468-fcb97e175fbb",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "XFZr9e44oroJDiBw",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Download file').item.json.id }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1TnKGbK61FG-RLpysjDYwa0ldlf1jPKCE",
+          "mode": "list",
+          "cachedResultName": "Processed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1TnKGbK61FG-RLpysjDYwa0ldlf1jPKCE"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        928,
+        -80
+      ],
+      "id": "4c4fa6ce-066d-48bf-989d-2b6546aa5ab5",
+      "name": "Move file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ftlTi2BLCBhL9EgH",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "newUpdatedFileName": "={{ $('Information Extractor').item.json.output['Invoice Biller'] }} - {{ $('Information Extractor').item.json.output['Invoice Number'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1088,
+        -80
+      ],
+      "id": "d9202948-29e3-49af-b5a2-a5124247b0ba",
+      "name": "Update file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ftlTi2BLCBhL9EgH",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1NvnunE5Hon6H58F2DcYzTq5IS7iwmXtb6BIS9YmUAzk",
+          "mode": "list",
+          "cachedResultName": "Invoice Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NvnunE5Hon6H58F2DcYzTq5IS7iwmXtb6BIS9YmUAzk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NvnunE5Hon6H58F2DcYzTq5IS7iwmXtb6BIS9YmUAzk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice Category": "={{ $('Information Extractor').item.json.output['Invoice Category'] }}",
+            "Invoice number": "={{ $('Information Extractor').item.json.output['Invoice Number'] }}",
+            "Invoice biller": "={{ $('Information Extractor').item.json.output['Invoice Biller'] }}",
+            "Invoice total": "={{ $('Information Extractor').item.json.output['Invoice Total'] }}",
+            "Invoice sub-total ": "={{ $('Information Extractor').item.json.output['Invoice Sub Total'] }}",
+            "Tax ammount": "={{ $('Information Extractor').item.json.output['Tax ammount'] }}",
+            "File name": "={{ $json.name }}",
+            "File URL": "=https://drive.google.com/drive/u/0/folders/{{ $json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Invoice Category",
+              "displayName": "Invoice Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice number",
+              "displayName": "Invoice number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice biller",
+              "displayName": "Invoice biller",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice total",
+              "displayName": "Invoice total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice sub-total ",
+              "displayName": "Invoice sub-total ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tax ammount",
+              "displayName": "Tax ammount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "File name",
+              "displayName": "File name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "File URL",
+              "displayName": "File URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -80
+      ],
+      "id": "672cf77c-f090-4605-b66f-a7768d22f0f6",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7ujcTaNKrziUZV3D",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Step 1 - Get a document (PDF / PNG)",
+        "height": 272,
+        "width": 528,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -352,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "e4a91268-7ef2-4998-bd04-c6c0454baa8d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "binaryProperty": "invoices",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "a5c6dce2-7b6c-401b-8418-e0e23d24a712",
+      "name": "Extract text from PDF",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "wA4SZelzSyauuy1W",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentType": "image_url",
+        "binaryProperty": "invoices",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        320,
+        80
+      ],
+      "id": "b6943ee6-fbcc-40c3-980e-aabdb282f869",
+      "name": "Extract text from PNG",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "wA4SZelzSyauuy1W",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Step 2 - Extract details",
+        "height": 400,
+        "width": 640,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        224,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "aa362553-a1ad-4da4-8853-15ec666b9f1f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Step 3 - Store data",
+        "height": 240,
+        "width": 528,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        896,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "44618645-6023-4826-b1c0-1a6df54ecce0",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract text from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract text from PNG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Move file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move file": {
+      "main": [
+        [
+          {
+            "node": "Update file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update file": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text from PDF": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text from PNG": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "50337db1-ea8f-4fc8-8d62-c19aeb6a238b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "768cb5933e51637b3beda12f241044bdfdf9c5aefb5cb737d40cb99a40e6b7ff"
+  },
+  "id": "G6paepwSaKBt14RLwaq5s",
+  "tags": []
+}
