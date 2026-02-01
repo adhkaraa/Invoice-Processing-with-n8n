@@ -11,3 +11,6 @@ This pipeline automates the entire process:
 4. Stores extracted data in Google Sheets
 5. Moves processed files to an archive folder
 
+## Workflow n8n
+(Workflow.png)
+
